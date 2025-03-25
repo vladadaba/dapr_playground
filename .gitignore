@@ -1,0 +1,7 @@
+node_modules
+dist
+volumes/data
+.turbo
+out
+.yarn
+**/generated/*

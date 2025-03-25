@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma/client" // because we are using monorepo
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id         String  @id @default(uuid(7)) @db.Uuid
+  product    Product @relation(fields: [productId], references: [id])
+  productId  String @db.Uuid @map("product_id")
+  quantity   Int
+  totalCost  Decimal @db.Money @map("total_cost")
+  status     OrderStatus
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  @@map("orders")
+}
+
+model Product {
+  id         String  @id @default(uuid(7)) @db.Uuid
+  name       String
+  cost       Decimal @db.Money
+  quantity   Int
+  orders     Order[]
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+
+enum OrderStatus {
+  WAITING_FOR_APPROVAL
+  REJECTED
+  APPROVED
+}

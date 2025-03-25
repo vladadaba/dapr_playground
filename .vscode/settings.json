@@ -1,0 +1,3 @@
+{
+  "eslint.workingDirectories": ["apps/inventory-svc", "apps/orders-svc"]
+}

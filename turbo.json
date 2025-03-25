@@ -1,0 +1,19 @@
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "start:dev": {
+      "cache": false,
+      "env": ["DATABASE_URL", "APP_API_TOKEN"]
+    },
+    "test:ci": {
+      "cache": false
+    },
+    "minikube_build": {}
+  }
+}

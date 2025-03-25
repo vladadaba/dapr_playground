@@ -1,0 +1,109 @@
+x-logging: &default-logging
+  driver: "fluentd"
+  options:
+    fluentd-address: "localhost:24224"
+    # fluentd-async-connect: "true"
+    tag: "{{.Name}}-{{.ID}}"
+
+services:
+  ##### orders-svc & DAPR Sidecar #####
+  orders-svc:
+    build:
+      context: .
+      dockerfile: ./apps/orders-svc/Dockerfile
+      target: installer
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - APP_API_TOKEN=${APP_API_TOKEN}
+    volumes:
+      - /usr/src/app/apps/orders-svc/node_modules
+      - /usr/src/app/apps/orders-svc/generated
+      - ./apps/orders-svc:/usr/src/app/apps/orders-svc
+    command: ["yarn", "start:dev"]
+    logging: *default-logging
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.orders-svc.rule=Host(`myapp.localhost`) && PathPrefix(`/orders-svc`)"
+      - "traefik.http.services.orders-svc.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.orders-svc-stripprefix.stripprefix.prefixes=/orders-svc"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=*"
+      - "traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.cors.headers.accessControlAllowHeaders=*"
+      - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.cors.headers.addvaryheader=true"
+      - "traefik.http.routers.orders-svc.middlewares=cors,orders-svc-stripprefix"
+
+  orders-svc_dapr:
+    image: "daprio/daprd:1.15.3"
+    command:
+      [
+        "./daprd",
+        "--app-id",
+        "orders-svc",
+        "--app-port",
+        "3000",
+        "--placement-host-address",
+        "placement:50006",
+        "--scheduler-host-address",
+        "scheduler:50007",
+        "--config",
+        "/dapr/config.yaml",
+        "--resources-path",
+        "/dapr/local",
+      ]
+    volumes:
+      - "./volumes/infra/dapr/components:/dapr"
+    environment:
+      - APP_API_TOKEN=${APP_API_TOKEN}
+    logging: *default-logging
+    network_mode: "service:orders-svc"
+
+  ##### inventory-svc & DAPR Sidecar #####
+  inventory-svc:
+    build:
+      context: .
+      dockerfile: ./apps/inventory-svc/Dockerfile
+      target: installer
+    volumes:
+      - /usr/src/app/apps/inventory-svc/node_modules
+      - ./apps/inventory-svc:/usr/src/app/apps/inventory-svc
+    command: ["yarn", "start:dev"]
+    environment:
+      - APP_API_TOKEN=${APP_API_TOKEN}
+    logging: *default-logging
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventory-svc.rule=Host(`myapp.localhost`) && PathPrefix(`/inventory-svc`)"
+      - "traefik.http.services.inventory-svc.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.inventory-svc-stripprefix.stripprefix.prefixes=/inventory-svc"
+      - "traefik.http.routers.inventory-svc.middlewares=inventory-svc-stripprefix"
+
+  inventory-svc_dapr:
+    image: "daprio/daprd:1.15.3"
+    command:
+      [
+        "./daprd",
+        "--app-id",
+        "inventory-svc",
+        "--app-port",
+        "3000",
+        "--placement-host-address",
+        "placement:50006",
+        "--scheduler-host-address",
+        "scheduler:50007",
+        "--config",
+        "/dapr/config.yaml",
+        "--resources-path",
+        "/dapr/local",
+      ]
+    volumes:
+      - "./volumes/infra/dapr/components:/dapr"
+    environment:
+      - APP_API_TOKEN=${APP_API_TOKEN}
+    logging: *default-logging
+    network_mode: "service:inventory-svc"
+
+networks:
+  default:
+    name: my_network
+    external: true

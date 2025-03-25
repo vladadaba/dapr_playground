@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import {
   ApproveOrderDto,
@@ -42,14 +50,12 @@ export class AppController {
     return this.appService.getState(key);
   }
 
-  @Post('start-workflow')
-  startWorkflow(@Body() { productId, quantity }: OrderDto) {
-    return this.appService.startWorkflow(productId, quantity);
-  }
-
-  @Post('approve-order')
-  approveOrder(@Body() { orderId, isApproved }: ApproveOrderDto) {
-    return this.appService.approve(orderId, isApproved);
+  @Patch('orders/:id/approved')
+  approveOrder(
+    @Param('id') id: string,
+    @Body() { isApproved }: ApproveOrderDto,
+  ) {
+    return this.appService.approve(id, isApproved);
   }
 
   @Get('orders')

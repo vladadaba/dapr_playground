@@ -8,9 +8,6 @@ export class OrderDto {
   quantity: number;
 }
 export class ApproveOrderDto {
-  @IsUUID()
-  orderId: string;
-
   @IsBoolean()
   isApproved: boolean;
 }

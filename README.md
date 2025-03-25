@@ -57,4 +57,28 @@ Or these steps to connect to Redis:
 
 Orders service can be interacted with using Swagger at http://myapp.localhost/orders-svc/api
 
--
+Things to try:
+
+- `GET /hello` endpoint - this endpoint uses [Dapr service invocation building block](https://docs.dapr.io/developing-applications/building-blocks/service-invocation/service-invocation-overview/)
+  - makes a request Orders service -> Orders service Dapr sidecar -> Inventory service Dapr sidecar -> Inventory service
+- `GET /hello_with_failures` endpoint - same as `GET /hello` endpoint but it fails on Inventory service. This demonstrates [Dapr resiliency policy](https://docs.dapr.io/concepts/resiliency-concept/)
+  - it has 10% probability of success each time
+- `POST /publish_redis` - uses [Dapr pubsub building block](https://docs.dapr.io/developing-applications/building-blocks/pubsub/pubsub-overview/) with [Redis component](https://docs.dapr.io/concepts/components-concept/)
+  - Inventory service logs payload to console
+- `POST /publish_rabbitmq` - same as above, but RabbitMQ component
+  - Inventory service logs payload to console
+- `POST /state` - uses [Dapr state management building block](https://docs.dapr.io/developing-applications/building-blocks/state-management/state-management-overview/)
+  - sets key-value in Redis
+- `GET /state`
+  - retrieves key-value from Redis using Dapr state management building block
+- `GET /products` - retrieves list of products from database (there is seed script to populate this which should have executed if you followed instricutions at the top of this file)
+- `GET /orders` - retrieves orders that are in `WAITING_FOR_APPROVAL` status
+
+The following 2 endpoints utilize [Dapr workflows building block](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/):
+
+- `POST /purchase` - creates an order by `productId` (from `GET /products` endpoint) and `quantity`
+  - if total cost is <$1000, order is auto approved
+  - larger orders are in `WAITING_FOR_APPROVAL` for 5 minutes (if it expires they go to `REJECTED`)
+- `PATCH /orders/:id/approved` is used to approve/reject order (id can be retrieved from `GET /orders` endpoint)
+
+Inventory service doesn't do anything except consume different calls from various Dapr building blocks and prints them to console. It was named Inventory service because I planned on adding some Inventory management functionality (maybe later), but currently it does not have any of those.

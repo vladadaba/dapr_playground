@@ -19,6 +19,12 @@ services:
       - /usr/src/app/apps/orders-svc/node_modules
       - /usr/src/app/apps/orders-svc/generated
       - ./apps/orders-svc:/usr/src/app/apps/orders-svc
+    develop:
+      watch:
+        - path: ./apps/orders-svc/prisma/schema.prisma
+          action: rebuild
+        - path: ./apps/orders-svc/package.json
+          action: rebuild
     command: ["yarn", "start:dev"]
     logging: *default-logging
     labels:
@@ -67,6 +73,10 @@ services:
     volumes:
       - /usr/src/app/apps/inventory-svc/node_modules
       - ./apps/inventory-svc:/usr/src/app/apps/inventory-svc
+    develop:
+      watch:
+        - path: ./apps/inventory-svc/package.json
+          action: rebuild
     command: ["yarn", "start:dev"]
     environment:
       - APP_API_TOKEN=${APP_API_TOKEN}
